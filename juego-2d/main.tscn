@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://dedk5l65211uc"]
+
+[ext_resource type="Script" uid="uid://b4uudogel751a" path="res://main.gd" id="1_h2yge"]
+[ext_resource type="PackedScene" uid="uid://ik2ytlmlppg2" path="res://mob.tscn" id="2_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://ddq0361btfuu0" path="res://player.tscn" id="3_lquwl"]
+[ext_resource type="PackedScene" uid="uid://borsk5wmit7fh" path="res://hud.tscn" id="4_1bvp3"]
+
+[sub_resource type="Curve2D" id="Curve2D_7mycd"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 480, 0, 0, 0, 0, 0, 480, 720, 0, 0, 0, 0, 0, 720, 0, 0, 0, 0, 0, 0)
+}
+point_count = 6
+
+[sub_resource type="GDScript" id="GDScript_1bvp3"]
+script/source = "extends CanvasLayer
+
+# Notifies `Main` node that the button has been pressed
+signal start_game
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	pass
+
+func show_message(text):
+	$Message.text = text
+	$Message.show()
+	$MessageTimer.start()
+	
+func show_game_over():
+	show_message(\"Game Over\")
+	# Wait until the MessageTimer has counted down.
+	await $MessageTimer.timeout
+
+	$Message.text = \"Dodge the Creeps!\"
+	$Message.show()
+	# Make a one-shot timer and wait for it to finish.
+	await get_tree().create_timer(1.0).timeout
+	$StartButton.show()
+	
+func update_score(score):
+	$ScoreLabel.text = str(score)
+	
+	
+func _on_start_button_pressed():
+	$StartButton.hide()
+	start_game.emit()
+"
+
+[node name="Main" type="Node" unique_id=1479740009]
+script = ExtResource("1_h2yge")
+mob_scene = ExtResource("2_1bvp3")
+
+[node name="Player" parent="." unique_id=1530553806 instance=ExtResource("3_lquwl")]
+
+[node name="MobTimer" type="Timer" parent="." unique_id=54441541]
+wait_time = 0.5
+one_shot = true
+autostart = true
+
+[node name="ScoreTimer" type="Timer" parent="." unique_id=626877244]
+one_shot = true
+autostart = true
+
+[node name="StartTimer" type="Timer" parent="." unique_id=401361972]
+wait_time = 2.0
+one_shot = true
+
+[node name="StartPosition" type="Marker2D" parent="." unique_id=1745077958]
+position = Vector2(240, 450)
+
+[node name="MobPath" type="Path2D" parent="." unique_id=181328158]
+curve = SubResource("Curve2D_7mycd")
+
+[node name="MobSpawnLocation" type="PathFollow2D" parent="MobPath" unique_id=2071931732]
+position = Vector2(-0.08605957, 0)
+
+[node name="HUD" parent="." unique_id=1782882374 instance=ExtResource("4_1bvp3")]
+script = SubResource("GDScript_1bvp3")
+
+[connection signal="hit" from="Player" to="." method="game_over"]
+[connection signal="hit" from="Player" to="." method="_on_player_hit"]
+[connection signal="timeout" from="MobTimer" to="." method="_on_mob_timer_timeout"]
+[connection signal="timeout" from="ScoreTimer" to="." method="_on_score_timer_timeout"]
+[connection signal="timeout" from="StartTimer" to="." method="_on_start_timer_timeout"]
+[connection signal="start_game" from="HUD" to="." method="new_game"]
